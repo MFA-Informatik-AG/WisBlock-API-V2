@@ -1,14 +1,9 @@
-/**
- * @file at_cmd.cpp
- * @author Taylor Lee (taylor.lee@rakwireless.com)
- * @brief AT command parser
- * @version 0.1
- * @date 2021-04-27
- *
- * @copyright Copyright (c) 2021
- *
- */
+#ifdef ARDUINO_ARCH_RP2040
+
 #include "at_cmd.h"
+
+#define AT_PRINTF(...) \
+	Serial.printf(__VA_ARGS__);
 
 static char atcmd[ATCMD_SIZE];
 static char cmd_result[ATCMD_SIZE];
@@ -121,16 +116,11 @@ static int hex2bin(const char *hex, uint8_t *bin, uint16_t bin_length)
 void at_settings(void)
 {
 	AT_PRINTF("Device status:");
-#ifdef NRF52_SERIES
-	AT_PRINTF("   RAK4631");
-#endif
-#ifdef ARDUINO_ARCH_RP2040
+
 	AT_PRINTF("   RAK11310");
-#endif
-#ifdef ESP32
-	AT_PRINTF("   RAK11200");
-#endif
+
 	AT_PRINTF("   Mode %s", g_lorawan_settings.lorawan_enable ? "LPWAN" : "P2P");
+
 	if (g_lorawan_settings.lorawan_enable)
 	{
 		AT_PRINTF("   Auto join %s", g_lorawan_settings.auto_join ? "enabled" : "disabled");
@@ -1807,17 +1797,7 @@ static int at_exec_restore(void)
  */
 static int at_exec_boot(void)
 {
-#if defined NRF52_SERIES
-	NRF_POWER->GPREGRET = 0x57; // 0xA8 OTA, 0x4e Serial, 0x57 UF2
-	NVIC_SystemReset();			// or sd_nvic_SystemReset();
-#endif
-#if defined ESP32
-	// No way to go into bootloader programmatically
-	ESP.restart();
-#endif
-#ifdef ARDUINO_ARCH_RP2040
 	_ontouch1200bps_();
-#endif
 }
 
 /**
@@ -1827,16 +1807,7 @@ static int at_exec_boot(void)
  */
 static int at_exec_dfu(void)
 {
-#if defined NRF52_SERIES
-	NRF_POWER->GPREGRET = 0xA8; // 0xA8 OTA, 0x4e Serial, 0x57 UF2
-	NVIC_SystemReset();			// or sd_nvic_SystemReset();
-#endif
-#if defined ESP32
 	// No support for OTA DFU
-#endif
-#ifdef ARDUINO_ARCH_RP2040
-	// No support for OTA DFU
-#endif
 }
 
 /** Application build time */
@@ -1898,14 +1869,7 @@ static int at_query_api(void)
  */
 static int at_query_hw_model(void)
 {
-#ifdef ESP32
-	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak11200");
-#elif defined ARDUINO_ARCH_RP2040
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak11310");
-#else // NRF52_SERIES
-	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak4630");
-#endif
-	return AT_SUCCESS;
 }
 
 /**
@@ -1915,13 +1879,8 @@ static int at_query_hw_model(void)
  */
 static int at_query_hw_id(void)
 {
-#ifdef ESP32
-	snprintf(g_at_query_buf, ATQUERY_SIZE, "esp32");
-#elif defined ARDUINO_ARCH_RP2040
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "rp2040");
-#else // NRF52_SERIES
-	snprintf(g_at_query_buf, ATQUERY_SIZE, "nrf52840");
-#endif
+
 	return AT_SUCCESS;
 }
 
@@ -2542,13 +2501,12 @@ static void at_cmd_handle(void)
 		break;
 	}
 
-#ifndef ESP32
 	// ESP32 has a problem with weak declarations of functions
 	if (g_user_at_cmd_list != NULL)
 	{
 		has_custom_at = true;
 	}
-#endif
+
 	// Not a standard AT command?
 	if (has_custom_at)
 	{
@@ -2787,37 +2745,6 @@ void at_serial_input(uint8_t cmd)
 	}
 }
 
-#ifdef NRF52_SERIES
-/**
- * @brief Callback when data over USB arrived
- *
- * @param itf unused
- */
-void tud_cdc_rx_cb(uint8_t itf)
-{
-	g_task_event_type |= AT_CMD;
-	if (g_task_sem != NULL)
-	{
-		xSemaphoreGiveFromISR(g_task_sem, pdFALSE);
-	}
-}
-#endif
-#ifdef ESP32
-static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-/**
- * @brief Callback when data over USB arrived
- */
-void usb_rx_cb(void)
-{
-	g_task_event_type |= AT_CMD;
-	if (g_task_sem != NULL)
-	{
-		xSemaphoreGiveFromISR(g_task_sem, &xHigherPriorityTaskWoken);
-	}
-}
-#endif
-
-#ifdef ARDUINO_ARCH_RP2040
 /** The event handler thread */
 Thread _thread_handle_serial(osPriorityNormal, 4096);
 
@@ -2902,4 +2829,5 @@ bool init_serial_task(void)
 	/// \todo how to detect that the task is really created
 	return true;
 }
+
 #endif
