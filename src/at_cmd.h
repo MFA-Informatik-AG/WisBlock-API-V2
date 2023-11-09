@@ -82,4 +82,8 @@ extern uint8_t g_last_fport;
 #define BUILD_SEC_CH0 (__TIME__[6])
 #define BUILD_SEC_CH1 (__TIME__[7])
 
+void set_new_config(void);
+int hex2bin(const char *hex, uint8_t *bin, uint16_t bin_length);
+int at_query_mode(void);
+
 #endif // __AT_H__

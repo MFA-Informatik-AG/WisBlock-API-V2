@@ -29,85 +29,6 @@ uint8_t wtb_regions[] = {8, 6, 1, 12, 0, 4, 7, 3, 5, 9, 10, 11, 2};
 /** Region map between API and WisToolBox*/
 uint8_t api_regions[] = {4, 2, 12, 7, 5, 8, 1, 6, 0, 9, 10, 11, 3};
 
-/**
- * @brief Set the device to new settings
- *
- */
-void set_new_config(void)
-{
-	Radio.Sleep();
-	Radio.SetTxConfig(MODEM_LORA, g_lorawan_settings.p2p_tx_power, 0, g_lorawan_settings.p2p_bandwidth,
-					  g_lorawan_settings.p2p_sf, g_lorawan_settings.p2p_cr,
-					  g_lorawan_settings.p2p_preamble_len, false,
-					  true, 0, 0, false, 5000);
-
-	Radio.SetRxConfig(MODEM_LORA, g_lorawan_settings.p2p_bandwidth, g_lorawan_settings.p2p_sf,
-					  g_lorawan_settings.p2p_cr, 0, g_lorawan_settings.p2p_preamble_len,
-					  g_lorawan_settings.p2p_symbol_timeout, false,
-					  0, true, 0, 0, false, true);
-	Radio.Rx(0);
-}
-
-/**
- * @brief Convert Hex string into uint8_t array
- *
- * @param hex Hex string
- * @param bin uint8_t
- * @param bin_length Length of array
- * @return int -1 if conversion failed
- */
-static int hex2bin(const char *hex, uint8_t *bin, uint16_t bin_length)
-{
-	uint16_t hex_length = strlen(hex);
-	const char *hex_end = hex + hex_length;
-	uint8_t *cur = bin;
-	uint8_t num_chars = hex_length & 1;
-	uint8_t byte = 0;
-
-	if (hex_length % 2 != 0)
-	{
-		return -1;
-	}
-
-	if (hex_length / 2 > bin_length)
-	{
-		return -1;
-	}
-
-	while (hex < hex_end)
-	{
-		if ('A' <= *hex && *hex <= 'F')
-		{
-			byte |= 10 + (*hex - 'A');
-		}
-		else if ('a' <= *hex && *hex <= 'f')
-		{
-			byte |= 10 + (*hex - 'a');
-		}
-		else if ('0' <= *hex && *hex <= '9')
-		{
-			byte |= *hex - '0';
-		}
-		else
-		{
-			return -1;
-		}
-		hex++;
-		num_chars++;
-
-		if (num_chars >= 2)
-		{
-			num_chars = 0;
-			*cur++ = byte;
-			byte = 0;
-		}
-		else
-		{
-			byte <<= 4;
-		}
-	}
-	return cur - bin;
-}
 
 /**
  * @brief Print out all parameters over UART and BLE
@@ -186,17 +107,6 @@ void at_settings(void)
 		AT_PRINTF("   P2P Symbol Timeout %d", g_lorawan_settings.p2p_symbol_timeout);
 	}
 	AT_PRINTF("   Send Frequency %ld", g_lorawan_settings.send_repeat_time / 1000);
-}
-
-/**
- * @brief Query LoRa mode
- *
- * @return int AT_SUCCESS
- */
-static int at_query_mode(void)
-{
-	snprintf(g_at_query_buf, ATQUERY_SIZE, "%d", g_lorawan_settings.lorawan_enable ? 1 : 0);
-	return AT_SUCCESS;
 }
 
 /**
