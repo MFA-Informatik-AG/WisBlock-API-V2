@@ -13,7 +13,8 @@
 		"arduino"
 	],
 	"platforms": [
-		"nordicnrf52"
+		"nordicnrf52",
+		"espressif32"
 	],
 	"license": "MIT",
 	"authors": [
