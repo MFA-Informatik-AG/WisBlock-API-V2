@@ -1,9 +1,6 @@
 #ifndef WISBLOCK_API_NRF52_H
 #define WISBLOCK_API_NRF52_H
 
-#include <WisBlock-API-V2-common.h>
-
-
 #if API_DEBUG > 0
 #define API_LOG(tag, ...)         \
 	do                            \
@@ -21,8 +18,9 @@
 #include <LoRaWan-Arduino.h>
 #include "wisblock_cayenne.h"
 #include <Wire.h>
-
 #include <nrf_nvic.h>
+
+#include <WisBlock-API-V2.h>
 
 // Main loop stuff
 void periodic_wakeup(TimerHandle_t unused);

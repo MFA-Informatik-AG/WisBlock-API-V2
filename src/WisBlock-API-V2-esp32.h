@@ -22,7 +22,7 @@
 
 #include "USB.h"
 
-#include <WisBlock-API-V2-common.h>
+#include <WisBlock-API-V2.h>
 #include "wisblock_cayenne.h"
 
 #if API_DEBUG > 0

@@ -11,7 +11,7 @@
 #include <multicore.h>
 #include <time.h>
 
-#include <WisBlock-API-V2-common.h>
+#include <WisBlock-API-V2.h>
 
 #if API_DEBUG > 0
 #define API_LOG(tag, ...)                \
