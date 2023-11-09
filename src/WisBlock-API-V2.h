@@ -17,7 +17,7 @@
 #ifdef ARDUINO_ARCH_RP2040 
 #include <WisBlock-API-V2-rp2040.h>
 #endif
-#ifdef ESP32
+#ifdef ARDUINO_ARCH_ESP32
 #include <WisBlock-API-V2-esp32.h>
 #endif 
 

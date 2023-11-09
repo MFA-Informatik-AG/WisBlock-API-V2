@@ -1,4 +1,4 @@
-#ifdef ESP32
+#ifdef ARDUINO_ARCH_ESP32
 
 #include "WisBlock-API-V2.h"
 
