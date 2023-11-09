@@ -11,7 +11,7 @@ It requires some rethinking about Arduino applications, because you have no `set
 This approach makes it easy to create applications designed for low power usage. During sleep the WisBlock Base + WisBlock Core RAK4631 consume only 40uA.
 
 In addition the API offers two options to setup LoRa P2P / LoRaWAN settings without the need to hard-code them into the source codes.    
-- AT Commands => [AT-Command Manual](https://docs.rakwireless.com/RUI3/Serial-Operating-Modes/AT-Command-Manual/https://docs.rakwireless.com/RUI3/Serial-Operating-Modes/AT-Command-Manual/) ↗️
+- AT Commands => [AT-Command Manual](https://docs.rakwireless.com/RUI3/Serial-Operating-Modes/AT-Command-Manual) ↗️
 - WisToolBox ==> [WisToolbox](https://docs.rakwireless.com/Product-Categories/Software-Tools/WisToolBox) ↗️
 
 # ⚠️ _**IMPORTANT:**_
