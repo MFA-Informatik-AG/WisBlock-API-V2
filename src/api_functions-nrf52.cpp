@@ -1,6 +1,7 @@
 #ifdef NRF52_SERIES
 
 #include "WisBlock-API-V2.h"
+#include "api_functions.h"
 
 /**
  * @brief System reset

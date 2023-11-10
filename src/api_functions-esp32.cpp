@@ -1,6 +1,7 @@
 #ifdef ARDUINO_ARCH_ESP32
 
 #include "WisBlock-API-V2.h"
+#include "api_functions.h"
 
 /**
  * @brief System reset
