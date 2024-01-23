@@ -2625,13 +2625,11 @@ static void at_cmd_handle(void)
 		break;
 	}
 
-#ifndef ESP32
-	// ESP32 has a problem with weak declarations of functions
-	if (g_user_at_cmd_list != NULL)
+	if(&g_user_at_cmd_list != 0)	
 	{
 		has_custom_at = true;
 	}
-#endif
+
 	// Not a standard AT command?
 	if (has_custom_at)
 	{
