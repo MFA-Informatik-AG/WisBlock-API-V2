@@ -158,6 +158,7 @@ extern bool g_enable_ble;
 
 // WiFi
 void init_wifi(void);
+void create_dev_name(void);
 void get_wifi_prefs(void);
 extern bool g_has_credentials;
 extern bool g_conn_status_changed;
