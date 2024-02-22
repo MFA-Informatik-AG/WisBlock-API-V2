@@ -17,11 +17,12 @@ s_loracompat_settings g_flash_content_compat;
 
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
+
 using namespace Adafruit_LittleFS_Namespace;
 
 const char settings_name[] = "RAK";
 
-File lora_file(InternalFS);
+Adafruit_LittleFS_Namespace::File lora_file(InternalFS);
 
 void flash_int_reset(void);
 
