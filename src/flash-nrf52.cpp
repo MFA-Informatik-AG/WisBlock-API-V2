@@ -37,6 +37,8 @@ void init_flash(void)
 		return;
 	}
 
+	API_LOG("FLASH", "Init flash");
+
 	// Initialize Internal File System
 	InternalFS.begin();
 
@@ -116,6 +118,8 @@ void init_flash(void)
  */
 boolean save_settings(void)
 {
+	API_LOG("FLASH", "Save settings");
+
 	bool result = true;
 	// Read saved content
 	lora_file.open(settings_name, FILE_O_READ);

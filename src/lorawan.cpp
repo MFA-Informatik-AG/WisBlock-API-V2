@@ -288,7 +288,7 @@ static void lpwan_rx_handler(lmh_app_data_t *app_data)
 	memcpy(g_rx_lora_data, app_data->buffer, app_data->buffsize);
 	g_rx_data_len = app_data->buffsize;
 
-	// Notify loop task
+	// Notify loop task, might already running
 	api_wake_loop(LORA_DATA);
 }
 

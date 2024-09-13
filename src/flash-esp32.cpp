@@ -27,6 +27,7 @@ void init_flash(void)
 	{
 		return;
 	}
+	
 	lora_prefs.begin("LoRaCred", false);
 
 	bool hasPref = lora_prefs.getBool("valid", false);

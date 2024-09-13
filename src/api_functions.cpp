@@ -78,6 +78,8 @@ void api_set_credentials(void)
  */
 void api_read_credentials(void)
 {
+	API_LOG("API", "read credentials");
+
 	init_flash();
 }
 
@@ -135,11 +137,12 @@ void api_wait_wake(void)
 void api_wake_loop(uint16_t reason)
 {
 	g_task_event_type |= reason;
-	API_LOG("API", "Waking up loop task");
 
 #if defined NRF52_SERIES || defined ESP32 || defined ARDUINO_RAKWIRELESS_RAK11300
 	if (g_task_sem != NULL)
 	{
+   	    API_LOG("API", "Waking up loop task through semaphore with reason(s) %d", g_task_event_type);
+
 		// Wake up task to send initial packet
 		xSemaphoreGive(g_task_sem);
 	}
@@ -147,6 +150,8 @@ void api_wake_loop(uint16_t reason)
 #if defined ARDUINO_ARCH_RP2040 && not defined ARDUINO_RAKWIRELESS_RAK11300
 	if (loop_thread != NULL)
 	{
+   	    API_LOG("API", "Waking up loop task through signal with reasons %d", g_task_event_type);
+
 		osSignalSet(loop_thread, SIGNAL_WAKE);
 	}
 #endif
