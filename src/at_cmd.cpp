@@ -131,7 +131,11 @@ void at_settings(void)
 	AT_PRINTF("   RAK11310");
 #endif
 #ifdef ESP32
+#ifdef RAK3112
+	AT_PRINTF("   RAK3312");
+#else
 	AT_PRINTF("   RAK11200");
+#endif
 #endif
 	AT_PRINTF("   Mode %s", g_lorawan_settings.lorawan_enable ? "LPWAN" : "P2P");
 	if (g_lorawan_settings.lorawan_enable)
@@ -1157,6 +1161,42 @@ static int at_exec_devaddr(char *str)
 }
 
 /**
+ * @brief AT+SYNCWORD=? Get device sync word
+ *
+ * @return int AT_SUCCESS if no error, otherwise AT_ERROR
+ */
+static int at_query_syncword(void)
+{
+	uint16_t syncword = Radio.GetSyncWord();
+
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "%04X", syncword);
+	return AT_SUCCESS;
+}
+
+/**
+ * @brief AT+SYNCWORD=<XXXX> Set device sync word
+ *
+ * @return int AT_SUCCESS if no error, otherwise AT_ERRNO_PARA_VAL
+ */
+static int at_exec_syncword(char *str)
+{
+	uint8_t len;
+	uint8_t buf[9] = {0};
+
+	len = hex2bin(str, buf, 2);
+	if (len != 2)
+	{
+		return AT_ERRNO_PARA_VAL;
+	}
+
+	uint16_t syncword = (uint16_t)(buf[0] << 8) + (uint16_t)(buf[1]);
+
+	Radio.SetCustomSyncWord(syncword);
+
+	return AT_SUCCESS;
+}
+
+/**
  * @brief AT+APPSKEY=? Get application session key
  *
  * @return int AT_SUCCESS;
@@ -1315,7 +1355,37 @@ static int at_query_join(void)
 }
 
 /**
- * @brief AT+NJM=<Param1>,<Param2>,<Param3>,<Param4> Set join mode
+ * @brief AT+JOIN without parameters starts a join if in LoRaWAN mode.
+ * 
+ * @return int 
+ */
+int at_exec_join_np(void)
+{
+	if (g_lorawan_settings.lorawan_enable)
+	{
+		if (!g_lpwan_has_joined)
+		{
+			if (!g_lorawan_initialized)
+			{
+				init_lorawan();
+			}
+			// Start Join process
+			lmh_join();
+		}
+		else
+		{
+			// Nothing to do, already joined
+		}
+		return AT_SUCCESS;
+	}
+	else
+	{
+		return AT_ERRNO_NOALLOW;
+	}
+}
+
+/**
+ * @brief AT+JOIN=<Param1>,<Param2>,<Param3>,<Param4> Set join mode
  * Param1 = Join command: 1 for joining the network , 0 for stop joining (not supported)
  * Param2 = Auto-Join config: 1 for Auto-join on power up) , 0 for no auto-join.
  * Param3 = Reattempt interval: 7 - 255 seconds (ignored)
@@ -1423,6 +1493,8 @@ static int at_exec_join(char *str)
 				{
 					init_lorawan();
 				}
+				// Start Join process
+				lmh_join();
 			}
 			else
 			{
@@ -1804,20 +1876,26 @@ static int at_query_snr(void)
 }
 
 /**
- * @brief AT+VER=? Get firmware version and build date
+ * @brief AT+VER=? Get BSP version
  *
  * @return int AT_SUCCESS;
  */
 static int at_query_version(void)
 {
-	if (g_custom_fw_ver.equals("unset"))
-	{
-		snprintf(g_at_query_buf, ATQUERY_SIZE, "WisBlock API %d.%d.%d", WISBLOCK_API_VER, WISBLOCK_API_VER2, WISBLOCK_API_VER3);
-	}
-	else
-	{
-		snprintf(g_at_query_buf, ATQUERY_SIZE, "%s", g_custom_fw_ver.c_str());
-	}
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "WisBlock API %d.%d.%d", WISBLOCK_API_VER, WISBLOCK_API_VER2, WISBLOCK_API_VER3);
+
+	return AT_SUCCESS;
+}
+
+/**
+ * @brief AT+FIRMWAREVER=? Get application version
+ *
+ * @return int AT_SUCCESS;
+ */
+static int at_query_app_version(void)
+{
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "%s", g_custom_fw_ver);
+
 	return AT_SUCCESS;
 }
 
@@ -1982,7 +2060,11 @@ static int at_query_api(void)
 static int at_query_hw_model(void)
 {
 #ifdef ESP32
+#ifdef RAK3112
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak3112");
+#else
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak11200");
+#endif
 #elif defined ARDUINO_ARCH_RP2040
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "rak11310");
 #else // NRF52_SERIES
@@ -1999,7 +2081,11 @@ static int at_query_hw_model(void)
 static int at_query_hw_id(void)
 {
 #ifdef ESP32
+#ifdef RAK3112
+	snprintf(g_at_query_buf, ATQUERY_SIZE, "esp32s3");
+#else
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "esp32");
+#endif
 #elif defined ARDUINO_ARCH_RP2040
 	snprintf(g_at_query_buf, ATQUERY_SIZE, "rp2040");
 #else // NRF52_SERIES
@@ -2355,9 +2441,10 @@ static atcmd_t g_at_cmd_list[] = {
 	{"+APPSKEY", "Get or set the application session key", at_query_appskey, at_exec_appskey, NULL, "RW"},
 	{"+NWKSKEY", "Get or Set the network session key", at_query_nwkskey, at_exec_nwkskey, NULL, "RW"},
 	{"+DEVADDR", "Get or set the device address", at_query_devaddr, at_exec_devaddr, NULL, "RW"},
+	{"+SYNCWORD", "Get or set the LoRaWAN sync word", at_query_syncword, at_exec_syncword, NULL, "RW"},
 	// Joining and sending data on LoRa network
 	{"+CFM", "Get or set the confirm mode", at_query_confirm, at_exec_confirm, NULL, "RW"},
-	{"+JOIN", "Join network", at_query_join, at_exec_join, NULL, "RW"},
+	{"+JOIN", "Join network", at_query_join, at_exec_join, at_exec_join_np, "RW"},
 	{"+NJS", "Get the join status", at_query_join_status, NULL, NULL, "R"},
 	{"+NJM", "Get or set the network join mode", at_query_joinmode, at_exec_joinmode, NULL, "RW"},
 	{"+SEND", "Send data", NULL, at_exec_send, NULL, "W"},
@@ -2373,6 +2460,7 @@ static atcmd_t g_at_cmd_list[] = {
 	{"+RSSI", "Last RX packet RSSI", at_query_rssi, NULL, NULL, "R"},
 	{"+SNR", "Last RX packet SNR", at_query_snr, NULL, NULL, "R"},
 	{"+VER", "Get SW version", at_query_version, NULL, NULL, "R"},
+	{"+FIRMWAREVER", "Get Application version", at_query_app_version, NULL, NULL, "R"},
 	// LoRa P2P management
 	{"+NWM", "Switch LoRa workmode", at_query_mode, at_exec_mode, NULL, "RW"},
 	{"+PFREQ", "Set P2P frequency", at_query_p2p_freq, at_exec_p2p_freq, NULL, "RW"},
@@ -2477,7 +2565,7 @@ static int at_exec_list_all(void)
 static void at_cmd_handle(void)
 {
 	uint8_t i;
-	int ret = 0;
+	int ret = AT_ERRNO_NOSUPP;
 	const char *cmd_name;
 	char *rxcmd = atcmd + 2;
 	int16_t tmp = atcmd_index - 2;
@@ -2827,6 +2915,8 @@ static void at_cmd_handle(void)
 	return;
 }
 
+bool convert_to_upper = true;
+
 /**
  * @brief Get Serial input and start parsing
  *
@@ -2834,7 +2924,7 @@ static void at_cmd_handle(void)
  */
 void at_serial_input(uint8_t cmd)
 {
-	Serial.printf("%c", cmd);
+	// Serial.printf("%c", cmd);
 
 	// Handle backspace
 	if (cmd == '\b')
@@ -2843,21 +2933,32 @@ void at_serial_input(uint8_t cmd)
 		Serial.printf(" \b");
 	}
 
-	// Convert to uppercase
-	if (cmd >= 'a' && cmd <= 'z')
+	if (cmd == '=')
 	{
-		cmd = toupper(cmd);
+		// Stop conversion to upper case
+		convert_to_upper = false;
+	}
+
+	if (convert_to_upper)
+	{ // Convert to uppercase
+		if (cmd >= 'a' && cmd <= 'z')
+		{
+			cmd = toupper(cmd);
+		}
 	}
 
 	// Check valid character
-	if ((cmd >= '0' && cmd <= '9') || (cmd >= 'a' && cmd <= 'z') ||
-		(cmd >= 'A' && cmd <= 'Z') || cmd == '?' || cmd == '+' || cmd == ':' ||
-		cmd == '=' || cmd == ' ' || cmd == ',' || cmd == '.' || cmd == '_')
+	// if ((cmd >= '0' && cmd <= '9') || (cmd >= 'a' && cmd <= 'z') ||
+	// 	(cmd >= 'A' && cmd <= 'Z') || cmd == '?' || cmd == '+' || cmd == ':' ||
+	// 	cmd == '=' || cmd == ' ' || cmd == ',' || cmd == '.' || cmd == '_' ||
+	// 	cmd == '&' || cmd == '\\' || cmd == '/' || cmd == '@')
+	if ((cmd >= 0x20 && cmd <= 0x7E))
 	{
 		atcmd[atcmd_index++] = cmd;
 	}
 	else if (cmd == '\r' || cmd == '\n')
 	{
+		convert_to_upper = true;
 		atcmd[atcmd_index] = '\0';
 		at_cmd_handle();
 	}
@@ -2918,42 +3019,6 @@ bool init_serial_task(void)
 	}
 	return false;
 }
-
-// namespace arduino
-// {
-// 	int value = 0;
-// 	BaseType_t _xHigherPriorityTaskWoken = pdFALSE;
-
-// 	void serialEventRun(void)
-// 	{
-// 		if (Serial.available())
-// 		{
-// 			while (Serial.available() > 0)
-// 			{
-// 				at_serial_input(uint8_t(Serial.read()));
-// 				delay(5);
-// 			}
-// 		}
-// 	}
-// };
-
-// namespace arduino
-// {
-// 	void serialEventRun(void)
-// 	{
-// 		if (Serial.available())
-// 		{
-// 			digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
-// 			{
-// 				g_task_event_type |= AT_CMD;
-// 				if (g_task_sem != NULL)
-// 				{
-// 					xSemaphoreGiveFromISR(g_task_sem, pdFALSE);
-// 				}
-// 			}
-// 		}
-// 	}
-// };
 #endif
 
 #if defined ESP32
@@ -2969,6 +3034,18 @@ void usb_rx_cb(void)
 		xSemaphoreGiveFromISR(g_task_sem, &xHigherPriorityTaskWoken);
 	}
 }
+#ifdef _VARIANT_RAK3112_
+void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+	if (event_base == ARDUINO_HW_CDC_EVENTS)
+	{
+		if (event_id == ARDUINO_HW_CDC_RX_EVENT)
+			{
+			usb_rx_cb();
+		}
+	}
+}
+#endif
 #endif
 
 #if defined ARDUINO_ARCH_RP2040 && not defined ARDUINO_RAKWIRELESS_RAK11300

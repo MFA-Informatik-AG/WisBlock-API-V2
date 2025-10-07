@@ -18,7 +18,8 @@ extern uint8_t g_last_fport;
 #ifdef NRF52_SERIES
 #define AT_PRINTF(...)                  \
 	Serial.printf(__VA_ARGS__);         \
-	Serial.printf("\n");                \
+	Serial.printf("\r\n");              \
+	Serial.flush();                     \
 	if (g_ble_uart_is_connected)        \
 	{                                   \
 		g_ble_uart.printf(__VA_ARGS__); \
@@ -26,9 +27,27 @@ extern uint8_t g_last_fport;
 	}
 #endif
 #ifdef ESP32
+#ifdef _VARIANT_RAK3112_
+#define AT_PRINTF(...)                            \
+	Serial.printf(__VA_ARGS__);                   \
+	Serial.printf("\r\n");                        \
+	Serial.flush();                               \
+	if (g_ble_uart_is_connected)                  \
+	{                                             \
+		char buff[255];                           \
+		int len = sprintf(buff, __VA_ARGS__);     \
+		std::string buff_s(buff);                 \
+		uart_tx_characteristic->setValue(buff_s); \
+		uart_tx_characteristic->notify();         \
+		delay(50);                                \
+	}
+
+// uart_tx_characteristic->setValue(&buff[idx], 1);
+#else
 #define AT_PRINTF(...)                                                  \
 	Serial.printf(__VA_ARGS__);                                         \
-	Serial.printf("\n");                                                \
+	Serial.printf("\r\n");                                              \
+	Serial.flush();                                                     \
 	if (g_ble_uart_is_connected)                                        \
 	{                                                                   \
 		char buff[255];                                                 \
@@ -38,11 +57,13 @@ extern uint8_t g_last_fport;
 		delay(50);                                                      \
 	}
 #endif
+#endif
 
 #if defined ARDUINO_RAKWIRELESS_RAK11300
 #define AT_PRINTF(...)          \
 	Serial.printf(__VA_ARGS__); \
-	Serial.printf("\r\n");
+	Serial.printf("\r\n");      \
+	Serial.flush();
 #endif
 
 #if defined ARDUINO_ARCH_RP2040 && not defined ARDUINO_RAKWIRELESS_RAK11300

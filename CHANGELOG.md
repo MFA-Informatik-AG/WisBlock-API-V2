@@ -4,6 +4,29 @@ Arduino library for RAKWireless WisBlock Core modules that takes all the LoRaWAN
 
 # Release Notes
 
+## 2.0.27 Fix AT+JOIN
+  - Add command without parameter to just join
+
+## 2.0.26 Fix RAK3112 BLE LED control
+  - Fix the problems with missing BLE LED control on the RAK3112
+
+## 2.0.25 Fix RAK3112 BLE
+  - Fix the problems with AT commands over BLE on the RAK3112
+  
+## 2.0.24 Fix AT commands
+  - Return AT_COMMAND_NOT_FOUND for unknown AT commands
+
+## 2.0.23 Update
+  - Add RAK3112 Core module with ESP32-S3 and integrated SX1262 transceiver
+  
+## 2.0.22 Improve RUI3 AT command compatibility
+  - Add AT+FIRMWAREVER command
+  - Add AT+SYNCWORD command
+  
+## 2.0.19 AT command parsing and default fPort changes
+  - Allow upper and lower case and special characters in AT commands after the "="
+  - Change LoRaWAN default fPort from 0 to 1
+
 ## 2.0.18 Fix dependency to CayenneLPP
   - Ownership of library has changed, PIO couldn't find the library
   

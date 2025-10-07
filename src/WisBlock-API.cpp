@@ -148,6 +148,25 @@ void setup()
 	Serial.begin(115200);
 
 	time_t serial_timeout = millis();
+#ifdef _VARIANT_RAK3112_
+	if (Serial.isPlugged())
+	{
+		while (!Serial.isConnected())
+		{
+			if ((millis() - serial_timeout) < 5000)
+			{
+				delay(100);
+#ifndef _CUSTOM_BOARD_
+				digitalWrite(LED_GREEN, !digitalRead(LED_GREEN));
+#endif
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+#else
 	// On nRF52840 the USB serial is not available immediately
 	while (!Serial)
 	{
@@ -164,9 +183,14 @@ void setup()
 		}
 	}
 #endif
+#endif
 
 #ifdef ESP32
+#ifdef _VARIANT_RAK3112_
+	Serial.onEvent(usbEventCallback);
+#else
 	Serial.onReceive(usb_rx_cb);
+#endif
 #endif
 #ifndef _CUSTOM_BOARD_
 	digitalWrite(LED_GREEN, HIGH);

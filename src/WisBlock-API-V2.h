@@ -8,12 +8,13 @@
  * @copyright Copyright (c) 2023
  *
  */
+#include <variant.h>
 #ifndef WISBLOCK_API_H
 #define WISBLOCK_API_H
 
 #define WISBLOCK_API_VER 2
 #define WISBLOCK_API_VER2 0
-#define WISBLOCK_API_VER3 10
+#define WISBLOCK_API_VER3 21
 #ifndef NO_BLE_LED
 // Set usage of BLE connection LED (blue). Comment the line to enable LED
 #define NO_BLE_LED 1
@@ -142,10 +143,18 @@ extern char g_ble_dev_name[];
 
 #if defined ESP32
 // BLE
+#ifdef _VARIANT_RAK3112_
+#include <BLEUtils.h>
+#include <BLEServer.h>
+#include <BLEDevice.h>
+#include <BLEAdvertising.h>
+#include <BLE2902.h>
+#else
 #include <NimBLEUtils.h>
 #include <NimBLEServer.h>
 #include <NimBLEDevice.h>
 #include <NimBLEAdvertising.h>
+#endif
 #include <ArduinoJson.h>
 
 void init_ble(void);
@@ -176,7 +185,7 @@ int8_t init_lora(void);
 int8_t init_lorawan(bool region_change = false);
 int8_t re_init_lorawan(void);
 bool send_p2p_packet(uint8_t *data, uint8_t size);
-lmh_error_status send_lora_packet(uint8_t *data, uint8_t size, uint8_t fport = 0);
+lmh_error_status send_lora_packet(uint8_t *data, uint8_t size, uint8_t fport = 1);
 extern bool g_lpwan_has_joined;
 extern bool g_rx_fin_result;
 extern bool g_join_result;
@@ -357,6 +366,7 @@ bool init_serial_task(void);
 #ifdef ESP32
 #include "USB.h"
 void usb_rx_cb(void);
+void usbEventCallback(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 void stop_ble_adv(void);
 #endif
 
@@ -433,5 +443,5 @@ extern uint16_t g_sw_ver_1;	   // major version increase on API change / not bac
 extern uint16_t g_sw_ver_2;	   // minor version increase on API change / backward compatible
 extern uint16_t g_sw_ver_3;	   // patch version increase on bugfix, no affect on API
 extern String g_device_pid;	   // Product PID (if applicable)
-extern String g_custom_fw_ver; // Custom firmware version
+extern char g_custom_fw_ver[]; // Custom firmware version
 #endif						   // WISBLOCK_API_H

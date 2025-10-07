@@ -11,7 +11,7 @@
 #include "WisBlock-API-V2.h"
 
 // Define alternate pdMS_TO_TICKS that casts uint64_t for long intervals due to limitation in nrf52840 BSP
-#define mypdMS_TO_TICKS(xTimeInMs) ((TickType_t)(((uint64_t)(xTimeInMs)*configTICK_RATE_HZ) / 1000))
+#define mypdMS_TO_TICKS(xTimeInMs) ((TickType_t)(((uint64_t)(xTimeInMs) * configTICK_RATE_HZ) / 1000))
 
 #ifdef SW_VERSION_1
 uint16_t g_sw_ver_1 = SW_VERSION_1; // major version increase on API change / not backwards compatible
@@ -30,7 +30,7 @@ uint16_t g_sw_ver_3 = 0; // patch version increase on bugfix, no affect on API
 #endif
 
 String g_device_pid = "Custom";
-String g_custom_fw_ver = "unset";
+char g_custom_fw_ver[64] = "Custom firmware";
 
 /** Buffer for device alias (WisToolBox) */
 char g_alias[16] = {0x00};
@@ -175,7 +175,11 @@ uint32_t api_init_lora(void)
 	return lora_rak11300_init();
 #endif
 #ifdef ESP32
+#ifdef RAK3112
+	return lora_rak3112_init();
+#else
 	return lora_rak13300_init();
+#endif
 #endif
 }
 
